@@ -1,6 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:quizzler/QuizBrain.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 
 void main() => runApp(Quizzler());
+
+List<Icon> iconList = [];
+
+QuizBrain quizBrain = QuizBrain();
+
+void addAsCorrectAnswer() {
+  iconList.add(Icon(
+    Icons.check,
+    color: Colors.green,
+  ));
+}
+
+void addAsWrongAnswer() {
+  iconList.add(Icon(
+    Icons.close,
+    color: Colors.red,
+  ));
+}
+
+_onAlertButtonPressed(context) {
+  Alert(
+    context: context,
+    type: AlertType.error,
+    title: "Quiz finished",
+    desc: "You are at the end of the quiz!",
+    buttons: [
+      DialogButton(
+        child: Text(
+          "OKAY",
+          style: TextStyle(color: Colors.white, fontSize: 20),
+        ),
+        onPressed: () {
+          print('Alert button pressed!');
+          Navigator.pop(context);
+        },
+        width: 120,
+      )
+    ],
+  ).show();
+}
 
 class Quizzler extends StatelessWidget {
   @override
@@ -17,6 +59,14 @@ class Quizzler extends StatelessWidget {
       ),
     );
   }
+}
+
+_checkAnswer({bool isPositiveButton}) {
+  if (quizBrain.checkIfCorrect(given: isPositiveButton))
+    addAsCorrectAnswer();
+  else
+    addAsWrongAnswer();
+  quizBrain.increaseQuestionNumber();
 }
 
 class QuizPage extends StatefulWidget {
@@ -37,7 +87,7 @@ class _QuizPageState extends State<QuizPage> {
             padding: EdgeInsets.all(10.0),
             child: Center(
               child: Text(
-                'This is where the question text will go.',
+                quizBrain.getQuestionText(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 25.0,
@@ -61,7 +111,15 @@ class _QuizPageState extends State<QuizPage> {
                 ),
               ),
               onPressed: () {
-                //The user picked true.
+                setState(() {
+                  if (quizBrain.checkIfEndOfTheQuiz()) {
+                    _onAlertButtonPressed(context);
+                    quizBrain.resetCount();
+                    iconList.clear();
+                  } else {
+                    _checkAnswer(isPositiveButton : true);
+                  }
+                });
               },
             ),
           ),
@@ -79,19 +137,21 @@ class _QuizPageState extends State<QuizPage> {
                 ),
               ),
               onPressed: () {
-                //The user picked false.
+                setState(() {
+                  if (quizBrain.checkIfEndOfTheQuiz()) {
+                    _onAlertButtonPressed(context);
+                    quizBrain.resetCount();
+                    iconList.clear();
+                  } else {
+                    _checkAnswer(isPositiveButton : false);
+                  }
+                });
               },
             ),
           ),
         ),
-        //TODO: Add a Row here as your score keeper
+        Row(children: iconList),
       ],
     );
   }
 }
-
-/*
-question1: 'You can lead a cow down stairs but not up stairs.', false,
-question2: 'Approximately one quarter of human bones are in the feet.', true,
-question3: 'A slug\'s blood is green.', true,
-*/
